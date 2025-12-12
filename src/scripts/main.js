@@ -34,26 +34,21 @@ function renderGame() {
   messageWin.classList.add('hidden');
   messageLose.classList.add('hidden');
 
- 
   if (status === 'initial') {
-
     startButton.textContent = 'Start';
     startButton.classList.remove('restart');
     startButton.classList.add('start');
     messageStart.classList.remove('hidden');
   } else if (status === 'playing') {
-   
     startButton.textContent = 'Restart';
     startButton.classList.remove('start');
     startButton.classList.add('restart');
   } else if (status === 'won') {
- 
     startButton.textContent = 'Restart';
     startButton.classList.remove('start');
     startButton.classList.add('restart');
     messageWin.classList.remove('hidden');
   } else if (status === 'lost') {
-
     startButton.textContent = 'Restart';
     startButton.classList.remove('start');
     startButton.classList.add('restart');
@@ -62,13 +57,14 @@ function renderGame() {
 }
 
 function handleKeyPress(event) {
-
   const status = game.getStatus();
+
   if (status !== 'playing') {
     return;
   }
 
   let moved = false;
+
   switch (event.key) {
     case 'ArrowLeft':
       moved = game.moveLeft();
@@ -83,7 +79,7 @@ function handleKeyPress(event) {
       moved = game.moveDown();
       break;
     default:
-      return; 
+      return;
   }
 
   if (moved) {
@@ -105,7 +101,6 @@ function handleStartRestart() {
 
   renderGame();
 }
-
 
 startButton.addEventListener('click', handleStartRestart);
 document.addEventListener('keydown', handleKeyPress);

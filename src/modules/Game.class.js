@@ -93,14 +93,16 @@ class Game {
     }
 
     const boardBefore = JSON.stringify(this.board);
-    
+
     let currentScoreIncrease = 0;
 
     let processedBoard = this.rotate(this.board, direction);
 
     processedBoard = processedBoard.map((row) => {
       const result = this.processRow(row);
+
       currentScoreIncrease += result.scoreIncrease;
+
       return result.newRow;
     });
 
@@ -112,8 +114,9 @@ class Game {
     if (moved) {
       this.score += currentScoreIncrease;
       this.isFirstMove = false;
-      this.addRandomTile(); 
+      this.addRandomTile();
       this.checkGameStatus();
+
       return true;
     }
 
@@ -149,14 +152,16 @@ class Game {
     while (i < filtered.length) {
       if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
         const mergedValue = filtered[i] * 2;
+
         newRow.push(mergedValue);
         scoreIncrease += mergedValue;
-        i += 2; 
+        i += 2;
       } else {
         newRow.push(filtered[i]);
         i += 1;
       }
     }
+
     while (newRow.length < FIELD_SIZE) {
       newRow.push(EMPTY_CELL);
     }
@@ -174,16 +179,19 @@ class Game {
     switch (direction) {
       case 'up':
         newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex])
+          newBoard.map((row) => row[colIndex]),
         );
+
         break;
       case 'down':
         newBoard = newBoard[0].map((_, colIndex) =>
           newBoard.map((row) => row[colIndex]).reverse()
         );
+
         break;
       case 'right':
-        newBoard = newBoard.map((row) => row.reverse());
+        newBoard = newBoard.map((row) => row.reverse()
+      );
         break;
       case 'left':
       default:
@@ -203,17 +211,23 @@ class Game {
     switch (direction) {
       case 'up':
         newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex])
+          newBoard.map((row) => row[colIndex]),
         );
+
         break;
       case 'down':
-        newBoard = newBoard.map((row) => row.reverse());
+        newBoard = newBoard.map((row) => row.reverse()
+      );
+
         newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex])
+          newBoard.map((row) => row[colIndex]),
         );
+
         break;
       case 'right':
-        newBoard = newBoard.map((row) => row.reverse());
+        newBoard = newBoard.map((row) => row.reverse()
+      );
+
         break;
       case 'left':
       default:
@@ -254,6 +268,7 @@ class Game {
       for (let c = 0; c < FIELD_SIZE; c++) {
         if (this.board[r][c] >= WIN_VALUE) {
           this.status = 'won';
+
           return;
         }
       }
