@@ -11,7 +11,7 @@ const game = new Game();
 
 function renderGame() {
   const board = game.getState();
-  const status = game.getStatus();
+  const gamesStatus = game.getStatus(); // 'idle', 'playing', 'win', 'lose'
   const score = game.getScore();
 
   fieldCells.forEach((cell, index) => {
@@ -30,42 +30,43 @@ function renderGame() {
 
   scoreElement.textContent = score;
 
+  // Спочатку приховуємо всі повідомлення
   messageStart.classList.add('hidden');
   messageWin.classList.add('hidden');
   messageLose.classList.add('hidden');
 
-  if (status === 'initial') {
+  // Очищаємо класи кнопки перед встановленням нового
+  startButton.classList.remove('start', 'restart');
+
+  // Логіка відображення
+  if (gamesStatus === 'idle') {
     startButton.textContent = 'Start';
-    startButton.classList.remove('restart');
     startButton.classList.add('start');
     messageStart.classList.remove('hidden');
-  } else if (status === 'playing') {
+  } else if (gamesStatus === 'playing') {
     startButton.textContent = 'Restart';
-    startButton.classList.remove('start');
     startButton.classList.add('restart');
-  } else if (status === 'won') {
+  } else if (gamesStatus === 'win') { // Виправлено: 'won' -> 'win'
     startButton.textContent = 'Restart';
-    startButton.classList.remove('start');
     startButton.classList.add('restart');
     messageWin.classList.remove('hidden');
-  } else if (status === 'lost') {
+  } else if (gamesStatus === 'lose') { // Виправлено: 'lost' -> 'lose'
     startButton.textContent = 'Restart';
-    startButton.classList.remove('start');
     startButton.classList.add('restart');
     messageLose.classList.remove('hidden');
   }
 }
 
-function handleKeyPress(event) {
-  const status = game.getStatus();
+function handleKeyPress(e) {
+  const gamesStatus = game.getStatus();
 
-  if (status !== 'playing') {
+  if (gamesStatus !== 'playing') {
     return;
   }
 
   let moved = false;
 
-  switch (event.key) {
+  switch (e.key) {
     case 'ArrowLeft':
       moved = game.moveLeft();
       break;
@@ -83,20 +84,22 @@ function handleKeyPress(event) {
   }
 
   if (moved) {
-    event.preventDefault();
+    e.preventDefault();
   }
 
   renderGame();
 }
 
 function handleStartRestart() {
-  const status = game.getStatus();
+  const gamesStatus = game.getStatus();
 
-  if (status === 'initial') {
+  if (gamesStatus === 'idle') {
+    // В стані idle кнопка є 'Start' -> викликаємо start
     game.start();
   } else {
+    // В стані playing/win/lose кнопка є 'Restart' -> викликаємо restart
+    // Restart скидає гру до 'idle'.
     game.restart();
-    game.start();
   }
 
   renderGame();

@@ -4,49 +4,57 @@ const FIELD_SIZE = 4;
 const WIN_VALUE = 2048;
 const EMPTY_CELL = 0;
 const INITIAL_TILES = 2;
+const STATUS_IDLE = 'idle';
+const STATUS_PLAYING = 'playing';
+const STATUS_WIN = 'win';
+const STATUS_LOSE = 'lose';
 
-class Game {
+export class Game {
   /**
    * @param {number[][]} [initialState]
    */
   constructor(initialState) {
-    this.initialState = initialState;
-    this.board = [];
-    this.score = 0;
-    this.status = 'initial';
-    this.isMoved = false;
-    this.isFirstMove = true;
+    this.initialState = initialState
+      ? initialState.map((row) => [...row])
+      : this.getInitialField();
 
-    if (!initialState) {
-      this.initialState = this.getInitialField();
-    }
+    this.board = null;
+    this.score = 0;
+    this.status = STATUS_IDLE;
+    this.isMoved = false;
+
     this.restart();
   }
 
   getInitialField() {
     return Array(FIELD_SIZE)
-      .fill()
+      .fill(0)
       .map(() => Array(FIELD_SIZE).fill(EMPTY_CELL));
   }
 
   addRandomTile() {
     const emptyCells = [];
 
-    for (let row = 0; row < FIELD_SIZE; row++) {
-      for (let col = 0; col < FIELD_SIZE; col++) {
-        if (this.board[row][col] === EMPTY_CELL) {
-          emptyCells.push({ row, col });
+    for (let r = 0; r < FIELD_SIZE; r++) {
+      for (let c = 0; c < FIELD_SIZE; c++) {
+        if (this.board[r][c] === EMPTY_CELL) {
+          emptyCells.push({ r, c });
         }
       }
     }
 
     if (emptyCells.length > 0) {
       const randomIndex = Math.floor(Math.random() * emptyCells.length);
-      const { row, col } = emptyCells[randomIndex];
+      const { r, c } = emptyCells[randomIndex];
+
       const newValue = Math.random() < 0.1 ? 4 : 2;
 
-      this.board[row][col] = newValue;
+      this.board[r][c] = newValue;
+
+      return true;
     }
+
+    return false;
   }
 
   getState() {
@@ -62,13 +70,13 @@ class Game {
   }
 
   start() {
-    if (this.status === 'initial') {
-      this.status = 'playing';
-      this.isFirstMove = true;
+    if (this.status !== STATUS_PLAYING) {
+      this.status = STATUS_PLAYING;
 
       for (let i = 0; i < INITIAL_TILES; i++) {
         this.addRandomTile();
       }
+      this.checkGameStatus();
 
       return true;
     }
@@ -79,86 +87,75 @@ class Game {
   restart() {
     this.board = this.initialState.map((row) => [...row]);
     this.score = 0;
-    this.status = 'initial';
+    this.status = STATUS_IDLE;
     this.isMoved = false;
-    this.isFirstMove = true;
   }
 
-  /**
-   * @param {('left'|'right'|'up'|'down')} direction
-   */
   makeMove(direction) {
-    if (this.status !== 'playing') {
+    if (this.status !== STATUS_PLAYING) {
       return false;
     }
 
-    const boardBefore = JSON.stringify(this.board);
+    this.isMoved = false;
 
     let currentScoreIncrease = 0;
 
-    let processedBoard = this.rotate(this.board, direction);
+    const originalBoard = this.board;
+    let processedBoard = this.rotate(originalBoard, direction);
+    let boardChanged = false;
 
+    // ВИПРАВЛЕНО: Видалено невикористаний аргумент rowIndex
     processedBoard = processedBoard.map((row) => {
-      const result = this.processRow(row);
+      const originalRow = [...row];
+      const result = this.mergeRow(row);
 
-      currentScoreIncrease += result.scoreIncrease;
+      currentScoreIncrease += result.score;
+
+      if (originalRow.join(',') !== result.newRow.join(',')) {
+        boardChanged = true;
+      }
 
       return result.newRow;
     });
 
-    this.board = this.rotateBack(processedBoard, direction);
-
-    const boardAfter = JSON.stringify(this.board);
-    const moved = boardBefore !== boardAfter;
-
-    if (moved) {
+    if (boardChanged) {
+      this.isMoved = true;
+      this.board = this.rotateBack(processedBoard, direction);
       this.score += currentScoreIncrease;
-      this.isFirstMove = false;
       this.addRandomTile();
-      this.checkGameStatus();
-
-      return true;
     }
+    
+    this.checkGameStatus();
 
-    return false;
+    return this.isMoved;
   }
 
   moveLeft() {
     return this.makeMove('left');
   }
-
   moveRight() {
     return this.makeMove('right');
   }
-
   moveUp() {
     return this.makeMove('up');
   }
-
   moveDown() {
     return this.makeMove('down');
   }
 
   /**
+   *
    * @param {number[]} row
-   * @returns {{newRow: number[], scoreIncrease: number}}
    */
-  processRow(row) {
-    const filtered = row.filter((value) => value !== EMPTY_CELL);
-    const newRow = [];
-    let scoreIncrease = 0;
-    let i = 0;
+  mergeRow(row) {
+    const newRow = row.filter((cell) => cell !== EMPTY_CELL);
+    let score = 0;
 
-    while (i < filtered.length) {
-      if (i + 1 < filtered.length && filtered[i] === filtered[i + 1]) {
-        const mergedValue = filtered[i] * 2;
-
-        newRow.push(mergedValue);
-        scoreIncrease += mergedValue;
-        i += 2;
-      } else {
-        newRow.push(filtered[i]);
-        i += 1;
+    for (let i = 0; i < newRow.length - 1; i++) {
+      if (newRow[i] === newRow[i + 1]) {
+        newRow[i] *= 2;
+        score += newRow[i];
+        newRow.splice(i + 1, 1);
       }
     }
 
@@ -166,78 +163,46 @@ class Game {
       newRow.push(EMPTY_CELL);
     }
 
-    return { newRow, scoreIncrease };
+    return { newRow, score };
   }
 
-  /**
-   * @param {number[][]} board
-   * @param {('left'|'right'|'up'|'down')} direction
-   */
   rotate(board, direction) {
-    let newBoard = board.map((row) => [...row]);
-
     switch (direction) {
       case 'up':
-        newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex]),
-        );
-
-        break;
+        return board[0].map((_, colIndex) => board.map((row) => row[colIndex]));
       case 'down':
-        newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex]).reverse()
-        );
+        const reversedRows = board.map((row) => [...row].reverse());
 
-        break;
+        return reversedRows[0].map((_, colIndex) =>
+          reversedRows.map((row) => row[colIndex]));
+
       case 'right':
-        newBoard = newBoard.map((row) => row.reverse()
-      );
-        break;
+        return board.map((row) => [...row].reverse());
+
       case 'left':
       default:
-        break;
+        return board;
     }
-
-    return newBoard;
   }
-
-  /**
-   * @param {number[][]} board
-   * @param {('left'|'right'|'up'|'down')} direction
-   */
   rotateBack(board, direction) {
-    let newBoard = board.map((row) => [...row]);
-
     switch (direction) {
       case 'up':
-        newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex]),
-        );
-
-        break;
+        return board[0].map((_, colIndex) => board.map((row) => row[colIndex]));
       case 'down':
-        newBoard = newBoard.map((row) => row.reverse()
-      );
+        const transposed = board[0].map((_, colIndex) =>
+          board.map((row) => row[colIndex]));
 
-        newBoard = newBoard[0].map((_, colIndex) =>
-          newBoard.map((row) => row[colIndex]),
-        );
-
-        break;
+        return transposed.map((row) => row.reverse());
       case 'right':
-        newBoard = newBoard.map((row) => row.reverse()
-      );
-
-        break;
+        return board.map((row) => [...row].reverse());
       case 'left':
       default:
-        break;
+        return board;
     }
-
-    return newBoard;
   }
 
   hasAvailableMoves() {
+    // 1. Є порожні клітинки?
     for (let r = 0; r < FIELD_SIZE; r++) {
       for (let c = 0; c < FIELD_SIZE; c++) {
         if (this.board[r][c] === EMPTY_CELL) {
@@ -246,14 +211,17 @@ class Game {
       }
     }
 
+    // 2. Чи можна об'єднати сусідні клітинки?
     for (let r = 0; r < FIELD_SIZE; r++) {
       for (let c = 0; c < FIELD_SIZE; c++) {
         const current = this.board[r][c];
 
+        // Перевірка праворуч
         if (c < FIELD_SIZE - 1 && current === this.board[r][c + 1]) {
           return true;
         }
 
+        // Перевірка знизу
         if (r < FIELD_SIZE - 1 && current === this.board[r + 1][c]) {
           return true;
         }
@@ -264,18 +232,24 @@ class Game {
   }
 
   checkGameStatus() {
+    if (this.status === STATUS_WIN) {
+      return;
+    }
+
+    // Перевірка на WIN
     for (let r = 0; r < FIELD_SIZE; r++) {
       for (let c = 0; c < FIELD_SIZE; c++) {
         if (this.board[r][c] >= WIN_VALUE) {
-          this.status = 'won';
+          this.status = STATUS_WIN;
 
           return;
         }
       }
     }
 
+    // Перевірка на LOSE
     if (!this.hasAvailableMoves()) {
-      this.status = 'lost';
+      this.status = STATUS_LOSE;
     }
   }
 }
