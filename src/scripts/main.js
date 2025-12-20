@@ -1,112 +1,125 @@
+'use strict';
 import Game from '../modules/Game.class.js';
 
-const fieldCells = document.querySelectorAll('.field-cell');
-const scoreElement = document.querySelector('.game-score');
-const startButton = document.querySelector('.button');
-const messageStart = document.querySelector('.message-start');
-const messageWin = document.querySelector('.message-win');
-const messageLose = document.querySelector('.message-lose');
-
+// Uncomment the next lines to use your game instance in the browser
+// const Game = require('../modules/Game.class');
 const game = new Game();
 
-function renderGame() {
-  const board = game.getState();
-  const gamesStatus = game.getStatus(); // 'idle', 'playing', 'win', 'lose'
-  const score = game.getScore();
+const paint = () => {
+  const state = game.getState();
 
-  fieldCells.forEach((cell, index) => {
-    const row = Math.floor(index / 4);
-    const col = index % 4;
-    const value = board[row][col];
+  state.forEach((row, i) => {
+    row.forEach((cell, j) => {
+      const element = document.querySelector('tbody').children[i].children[j];
 
-    cell.textContent = value > 0 ? value : '';
+      element.className = 'field-cell';
+      element.textContent = '';
 
-    cell.className = 'field-cell';
+      if (cell > 0) {
+        element.textContent = cell;
+        element.classList.add(`field-cell--${cell}`);
+      }
 
-    if (value > 0) {
-      cell.classList.add(`field-cell--${value}`);
-    }
+      if (cell === 2048) {
+        const winMes = document.querySelector('.message-container').children[1];
+
+        winMes.classList.remove('hidden');
+      }
+    });
   });
+};
+
+const checkForWin = () => {
+  const statuss = game.getStatus();
+
+  if (statuss === 'win') {
+    const winMes = document.querySelector('.message-container').children[1];
+
+    winMes.classList.remove('hidden');
+  }
+};
+
+const checkForLose = () => {
+  const statuss = game.getStatus();
+
+  if (statuss === 'lose') {
+    const winMes = document.querySelector('.message-container').children[0];
+
+    winMes.classList.remove('hidden');
+  }
+};
+
+const setScore = () => {
+  const score = game.getScore();
+  const scoreElement = document.querySelector('.game-score');
 
   scoreElement.textContent = score;
+};
 
-  // Спочатку приховуємо всі повідомлення
-  messageStart.classList.add('hidden');
-  messageWin.classList.add('hidden');
-  messageLose.classList.add('hidden');
+document.querySelector('.button').addEventListener('click', (e) => {
+  const startBut = document.querySelector('.button.start');
+  const restartBut = document.querySelector('.button.restart');
+  const startMes = document.querySelector('.message-container').children[2];
+  const loseMes = document.querySelector('.message-container').children[0];
 
-  // Очищаємо класи кнопки перед встановленням нового
-  startButton.classList.remove('start', 'restart');
-
-  // Логіка відображення
-  if (gamesStatus === 'idle') {
-    startButton.textContent = 'Start';
-    startButton.classList.add('start');
-    messageStart.classList.remove('hidden');
-  } else if (gamesStatus === 'playing') {
-    startButton.textContent = 'Restart';
-    startButton.classList.add('restart');
-  } else if (gamesStatus === 'win') { // Виправлено: 'won' -> 'win'
-    startButton.textContent = 'Restart';
-    startButton.classList.add('restart');
-    messageWin.classList.remove('hidden');
-  } else if (gamesStatus === 'lose') { // Виправлено: 'lost' -> 'lose'
-    startButton.textContent = 'Restart';
-    startButton.classList.add('restart');
-    messageLose.classList.remove('hidden');
-  }
-}
-
-function handleKeyPress(e) {
-  const gamesStatus = game.getStatus();
-
-  if (gamesStatus !== 'playing') {
-    return;
-  }
-
-  let moved = false;
-
-  switch (e.key) {
-    case 'ArrowLeft':
-      moved = game.moveLeft();
-      break;
-    case 'ArrowRight':
-      moved = game.moveRight();
-      break;
-    case 'ArrowUp':
-      moved = game.moveUp();
-      break;
-    case 'ArrowDown':
-      moved = game.moveDown();
-      break;
-    default:
-      return;
-  }
-
-  if (moved) {
-    e.preventDefault();
-  }
-
-  renderGame();
-}
-
-function handleStartRestart() {
-  const gamesStatus = game.getStatus();
-
-  if (gamesStatus === 'idle') {
-    // В стані idle кнопка є 'Start' -> викликаємо start
+  if (startBut !== null) {
     game.start();
-  } else {
-    // В стані playing/win/lose кнопка є 'Restart' -> викликаємо restart
-    // Restart скидає гру до 'idle'.
-    game.restart();
+    startMes.classList.add('hidden');
+    startBut.classList.remove('start');
+    startBut.textContent = 'Restart';
+    startBut.classList.add('restart');
   }
 
-  renderGame();
-}
+  if (restartBut !== null) {
+    game.restart();
+    setScore();
+    loseMes.classList.add('hidden');
+    startMes.classList.remove('hidden');
+    restartBut.classList.remove('restart');
+    restartBut.textContent = 'Start';
+    restartBut.classList.add('start');
+  }
 
-startButton.addEventListener('click', handleStartRestart);
-document.addEventListener('keydown', handleKeyPress);
+  paint();
+});
 
-// Початковий рендер
-renderGame();
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'ArrowRight') {
+    game.moveRight();
+    paint();
+    setScore();
+    checkForWin();
+    checkForLose();
+
+    // eslint-disable-next-line no-console
+    // game.moveUp();
+    // const state = game.getState();
+  } else if (e.code === 'ArrowLeft') {
+    game.moveLeft();
+    paint();
+    setScore();
+    checkForWin();
+    checkForLose();
+    // eslint-disable-next-line no-console
+    // game.moveUp();
+    // const state = game.getState();
+  } else if (e.code === 'ArrowUp') {
+    game.moveUp();
+    paint();
+    setScore();
+    checkForWin();
+    checkForLose();
+    // eslint-disable-next-line no-console
+    // game.moveUp();
+    // const state = game.getState();
+  } else if (e.code === 'ArrowDown') {
+    game.moveDown();
+    paint();
+    setScore();
+    checkForWin();
+    checkForLose();
+    // eslint-disable-next-line no-console
+    // game.moveUp();
+    // const state = game.getState();
+  }
+});
