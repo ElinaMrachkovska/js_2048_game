@@ -1,8 +1,6 @@
 'use strict';
 import Game from '../modules/Game.class.js';
 
-// Uncomment the next lines to use your game instance in the browser
-// const Game = require('../modules/Game.class');
 const game = new Game();
 
 const paint = () => {
@@ -91,35 +89,27 @@ document.addEventListener('keydown', (e) => {
     checkForWin();
     checkForLose();
 
-    // eslint-disable-next-line no-console
-    // game.moveUp();
-    // const state = game.getState();
+
   } else if (e.code === 'ArrowLeft') {
     game.moveLeft();
     paint();
     setScore();
     checkForWin();
     checkForLose();
-    // eslint-disable-next-line no-console
-    // game.moveUp();
-    // const state = game.getState();
+
   } else if (e.code === 'ArrowUp') {
     game.moveUp();
     paint();
     setScore();
     checkForWin();
     checkForLose();
-    // eslint-disable-next-line no-console
-    // game.moveUp();
-    // const state = game.getState();
+
   } else if (e.code === 'ArrowDown') {
     game.moveDown();
     paint();
     setScore();
     checkForWin();
     checkForLose();
-    // eslint-disable-next-line no-console
-    // game.moveUp();
-    // const state = game.getState();
+
   }
 });
